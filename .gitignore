@@ -1,0 +1,6 @@
+.venv
+.vscode
+build/
+generated_models/
+install/
+log/
