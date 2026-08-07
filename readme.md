@@ -4,7 +4,7 @@ The name bluerov2_n_gz is just a horrible name, not much meaning to it asides th
 
 This was designed on Ubuntu 22.04 LTS, with ROS@ jazzy. This is just a launch file so there shouldn't be many errors in other ROS2 versions asides variable name issues and other trivial issues.
 
-If you're getting errors, the first thing to check are the directories. A few things are currently hardcoded due to debugging/testing. But the quick fix may be to move this project to home (\~/bluerov2_n_gz). If you've not cloned it yet, cloning in home directory is best. To clarify, the home directory (\~) expands to \~/<user> where user is the name of your profile. For example, \~/demi. This will be fixed in a future release to allow more flexibility.
+If you're getting errors, the first thing to check are the directories. A few things are currently hardcoded due to debugging/testing. But the quick fix may be to move this project to home (\~/bluerov2_n_gz). If you've not cloned it yet, cloning in home directory is best. To clarify, the home directory (\~) expands to \~/{user} where user is the name of your profile. For example, \~/demi. This will be fixed in a future release to allow more flexibility.
 
 Setup
 after cloning repository, run:
@@ -16,7 +16,7 @@ source install/setup.bash
 Usage
 The key command is:
 
-ros2 launch bluerov2_description bluerov2.launch.py number:=<n>
+ros2 launch bluerov2_description bluerov2.launch.py number:={n}
 
 where n is replaced with the number of robots you may want to spawn. It defaults to 1, in which case, you may leave the number argument out completely.
 
