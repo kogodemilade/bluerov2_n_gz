@@ -1,4 +1,4 @@
-BlueRov2_GZ
+BlueRov2_n_gz
 
 The name bluerov2_n_gz is just a horrible name, not much meaning to it asides the fact that it was supposed to signify that it can launch an arbitrary number (n) bots in the same world.
 
