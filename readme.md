@@ -6,21 +6,24 @@ This was designed on Ubuntu 22.04 LTS, with ROS@ jazzy. This is just a launch fi
 
 If you're getting errors, the first thing to check are the directories. A few things are currently hardcoded due to debugging/testing. But the quick fix may be to move this project to home (\~/bluerov2_n_gz). If you've not cloned it yet, cloning in home directory is best. To clarify, the home directory (\~) expands to \~/{user} where user is the name of your profile. For example, \~/demi. This will be fixed in a future release to allow more flexibility.
 
-Setup
+*Setup*
+
 after cloning repository, run:
 ```
 cd ~/bluerov2_n_gz
 colcon build
 source install/setup.bash
 ```
-Usage
+
+*Usage*
+
 The key command is:
 
 ros2 launch bluerov2_description bluerov2.launch.py number:={n}
 
 where n is replaced with the number of robots you may want to spawn. It defaults to 1, in which case, you may leave the number argument out completely.
 
-Notes:
+*Notes*:
 Gazebo caches data, which make running subsequent launches with different numbers of n prone to unpredictable behaviour. So, after each run these commands:
 ```
 rm -rf build install log generated_models 
