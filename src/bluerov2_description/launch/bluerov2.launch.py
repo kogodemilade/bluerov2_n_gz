@@ -27,7 +27,7 @@ def spawn_n_robots(context, *args, **kwargs):
         robot = {
             "name": f"robot_{i}",
             "namespace":f"robot_{i}",
-            "fdm_port" : 9002 + i,
+            "fdm_port" : 9002 + i*10,
             "mavlink_port":14550+i,
             "x" : i*5,
             "y":0,
