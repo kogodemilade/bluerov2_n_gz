@@ -15,7 +15,9 @@ install(
   DIRECTORY
     launch
     models
+    meshes
     worlds
+    config
   DESTINATION
     share/${PROJECT_NAME}
 )

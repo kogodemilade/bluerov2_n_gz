@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<sdf version="1.7">
+
+  <model name="rock">
+
+    <static>true</static>
+
+    <link name="rock_link">
+
+      <collision name="collision">
+
+        <geometry>
+          <sphere>
+            <radius>1.0</radius>
+          </sphere>
+        </geometry>
+
+      </collision>
+
+      <visual name="visual">
+
+        <geometry>
+
+          <sphere>
+            <radius>1.0</radius>
+          </sphere>
+
+        </geometry>
+
+        <material>
+
+          <ambient>0.16 0.14 0.10 1</ambient>
+
+          <diffuse>0.25 0.22 0.16 1</diffuse>
+
+          <specular>0.03 0.03 0.03 1</specular>
+
+        </material>
+
+      </visual>
+
+    </link>
+
+  </model>
+
+</sdf>

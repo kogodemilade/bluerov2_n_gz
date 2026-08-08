@@ -1,60 +1,318 @@
 <?xml version="1.0" ?>
-<sdf version="1.6">
-  <world name="bluerov2_underwater">
+<sdf version="1.9">
 
-    <!-- Base Gazebo plugins -->
+  <world name="underwater_world">
+
+    <!-- SCENE -->
+    <scene>
+      <ambient>0.035 0.12 0.18 1</ambient>
+      <background>0.002 0.018 0.035 1</background>
+      <shadows>false</shadows>
+
+      <fog>
+        <type>linear</type>
+        <color>0.01 0.08 0.14 1</color>
+        <start>6</start>
+        <end>40</end>
+      </fog>
+    </scene>
+
+
+    <!-- PHYSICS -->
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+
+    <!-- GAZEBO SYSTEMS -->
+
     <plugin
         filename="gz-sim-physics-system"
         name="gz::sim::systems::Physics">
     </plugin>
+
     <plugin
         filename="gz-sim-user-commands-system"
         name="gz::sim::systems::UserCommands">
     </plugin>
+
     <plugin
         filename="gz-sim-scene-broadcaster-system"
         name="gz::sim::systems::SceneBroadcaster">
     </plugin>
 
-    <!-- IMU plugin manages all IMU sensors -->
-    <plugin filename="libgz-sim-imu-system.so"
-            name="gz::sim::systems::Imu">
+    <plugin
+        filename="libgz-sim-imu-system.so"
+        name="gz::sim::systems::Imu">
     </plugin>
 
-    <!-- Buoyancy plugin manages buoyancy for all models -->
+    <plugin
+        filename="gz-sim-sensors-system"
+        name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+
+    <!-- BUOYANCY -->
+
     <plugin
         filename="gz-sim-buoyancy-system"
         name="gz::sim::systems::Buoyancy">
-      <!-- Fluid density is 1 (air) above 0 and 1000 (water) below 0 -->
+
       <graded_buoyancy>
         <default_density>1000</default_density>
+
         <density_change>
           <above_depth>0</above_depth>
           <density>1</density>
         </density_change>
       </graded_buoyancy>
-      <!-- Enable by model name -->
-       {% for robot in robot_names %}
-        <enable>{{robot.name}}</enable>
-       {% endfor %}
-      
+
+      {% for robot in robot_names %}
+      <enable>{{ robot.name }}</enable>
+      {% endfor %}
+
     </plugin>
+
+
+    <!-- SUN -->
 
     <include>
       <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Sun</uri>
     </include>
+
+
+    <!-- MAIN SUNLIGHT -->
+
+    <light
+        type="directional"
+        name="underwater_sun">
+
+      <cast_shadows>false</cast_shadows>
+
+      <pose>0 0 25 0 0 0</pose>
+
+      <diffuse>0.55 0.80 0.88 1</diffuse>
+      <specular>0.10 0.18 0.22 1</specular>
+
+      <direction>
+        -0.25
+        0.15
+        -1
+      </direction>
+
+    </light>
+
+
+    <!-- SURFACE LIGHT -->
+
+    <light
+        type="directional"
+        name="surface_light">
+
+      <cast_shadows>false</cast_shadows>
+
+      <pose>0 0 18 0 0 0</pose>
+
+      <diffuse>0.40 0.75 0.88 1</diffuse>
+      <specular>0.08 0.16 0.20 1</specular>
+
+      <direction>
+        0.05
+        -0.08
+        -1
+      </direction>
+
+    </light>
+
+
+    <!-- UNDERWATER FILL -->
+
+    <light
+        type="directional"
+        name="underwater_fill">
+
+      <cast_shadows>false</cast_shadows>
+
+      <pose>-15 10 12 0 0 0</pose>
+
+      <diffuse>0.06 0.22 0.30 1</diffuse>
+      <specular>0.01 0.03 0.04 1</specular>
+
+      <direction>
+        0.35
+        -0.20
+        -1
+      </direction>
+
+    </light>
+
+
+    <!-- SUNBEAM 1 -->
+
+    <light
+        type="spot"
+        name="sunbeam_1">
+
+      <pose>-12 -8 12 0.20 -0.15 0.15</pose>
+
+      <cast_shadows>false</cast_shadows>
+
+      <diffuse>0.12 0.45 0.58 1</diffuse>
+      <specular>0.02 0.05 0.07 1</specular>
+
+      <direction>
+        0.15
+        0.10
+        -1
+      </direction>
+
+      <spot>
+        <inner_angle>0.18</inner_angle>
+        <outer_angle>0.48</outer_angle>
+        <falloff>0.50</falloff>
+      </spot>
+
+    </light>
+
+
+    <!-- SUNBEAM 2 -->
+
+    <light
+        type="spot"
+        name="sunbeam_2">
+
+      <pose>0 -12 14 0.15 0.10 0</pose>
+
+      <cast_shadows>false</cast_shadows>
+
+      <diffuse>0.10 0.40 0.55 1</diffuse>
+      <specular>0.02 0.04 0.06 1</specular>
+
+      <direction>
+        -0.10
+        0.05
+        -1
+      </direction>
+
+      <spot>
+        <inner_angle>0.16</inner_angle>
+        <outer_angle>0.45</outer_angle>
+        <falloff>0.55</falloff>
+      </spot>
+
+    </light>
+
+
+    <!-- SUNBEAM 3 -->
+
+    <light
+        type="spot"
+        name="sunbeam_3">
+
+      <pose>12 5 13 -0.10 0.15 0</pose>
+
+      <cast_shadows>false</cast_shadows>
+
+      <diffuse>0.10 0.42 0.58 1</diffuse>
+      <specular>0.02 0.05 0.07 1</specular>
+
+      <direction>
+        -0.15
+        -0.05
+        -1
+      </direction>
+
+      <spot>
+        <inner_angle>0.18</inner_angle>
+        <outer_angle>0.50</outer_angle>
+        <falloff>0.50</falloff>
+      </spot>
+
+    </light>
+
+
+    <!-- SEABED -->
+
+    <model name="seabed">
+
+      <static>true</static>
+
+      <link name="seabed_link">
+
+        <collision name="collision">
+
+          <geometry>
+            <mesh>
+              <uri>model://seabed.obj</uri>
+            </mesh>
+          </geometry>
+
+        </collision>
+
+
+        <visual name="visual">
+
+          <geometry>
+            <mesh>
+              <uri>model://seabed.obj</uri>
+            </mesh>
+          </geometry>
+
+          <material>
+
+            <ambient>
+              0.16 0.14 0.06 1
+            </ambient>
+
+            <diffuse>
+              0.45 0.38 0.16 1
+            </diffuse>
+
+            <specular>
+              0.02 0.02 0.01 1
+            </specular>
+
+          </material>
+
+        </visual>
+
+      </link>
+
+    </model>
+
+
+    <!-- DECORATIONS -->
+
+    <include>
+
+      <uri>model://decorations/model.sdf</uri>
+
+      <name>underwater_decorations</name>
+
+    </include>
+
+
+    <!-- SAND HEIGHTMAP -->
 
     <include>
       <uri>model://sand_heightmap</uri>
       <pose>0 7 -10 0 0 0</pose>
     </include>
 
-    {% for robot in robot_names%}
+
+    <!-- ROBOTS -->
+
+    {% for robot in robot_names %}
     <include>
       <uri>model://{{ robot.name }}</uri>
-      <pose>{{robot.x}} 0 -2 0 0 0</pose>
+      <pose>{{ robot.x }} 0 -2 0 0 0</pose>
     </include>
     {% endfor %}
+
+
+    <!-- AXES -->
 
     <include>
       <uri>model://axes</uri>

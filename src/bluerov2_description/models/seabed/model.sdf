@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<sdf version="1.8">
+
+  <model name="seabed">
+
+    <static>true</static>
+
+    <link name="base_link">
+
+      <collision name="collision">
+
+        <geometry>
+          <box>
+            <size>100 100 1</size>
+          </box>
+        </geometry>
+
+      </collision>
+
+      <visual name="visual">
+
+        <geometry>
+          <box>
+            <size>100 100 1</size>
+          </box>
+        </geometry>
+
+        <material>
+          <ambient>0.76 0.72 0.50 1</ambient>
+          <diffuse>0.76 0.72 0.50 1</diffuse>
+        </material>
+
+      </visual>
+
+      <pose>0 0 -0.5 0 0 0</pose>
+
+    </link>
+
+  </model>
+
+</sdf>
