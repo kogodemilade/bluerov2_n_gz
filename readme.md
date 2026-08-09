@@ -1,4 +1,4 @@
-BlueRov2_n_gz
+**BlueRov2_n_gz**
 
 The name bluerov2_n_gz is just a horrible name, not much meaning to it asides the fact that it was supposed to signify that it can launch an arbitrary number (n) bots in the same world.
 
@@ -93,4 +93,5 @@ rc 3 1300
 ```
 
 **Rviz**
+
 The launch file also launches rviz, but the tf transforms are published by the slam nodes, which don't activate until the bots are sufficiently close the seafloor. In this case, after arming the throttle, send an rc 3 command with a pwm value between 1000 and 1500 (this commands the robot to move downwards). I find the best way to know how close is 'close enough' is by adding the 'image display' in gazebo till the camera starts to show an image. Sometimes, even when close to the seafloor, it may still not start slam, due to the lack of features. When done, 'rc 3 1500' command should be sent to hold in that position. Sometimes due to the featureless environment, The command 'rc 5 1550' should be sent, which moves the robot forward. Afterwhich, the map usually starts being generated, and the transforms get published. The transform and pointcloud should show shortly after.  
