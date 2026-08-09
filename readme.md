@@ -74,6 +74,12 @@ ros2 launch bluerov2_description bluerov2.launch.py number:={n}
 where n is replaced with the number of robots you may want to spawn. It defaults to 1, in which case, you may leave the number argument out completely.
 This requires ros to be sourced, as well as your pip environment.
 
+There are 2 other optional configurations:
+
+ardusub_path:=/path/to/ardupilot/build/sitl/bin/ardusub
+
+generated_dir:= /Directory/used/for/generated/Gazebo/world file
+
 *Notes:*
 Gazebo caches data, which make running subsequent launches with different numbers of n prone to unpredictable behaviour. So, after each launch, run these commands:
 ```
