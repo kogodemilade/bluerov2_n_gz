@@ -30,6 +30,7 @@ from launch_ros.actions import SetParameter
 from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.parameter_descriptions import ParameterValue
 from launch.actions import ExecuteProcess
+import shutil
 
 # ---------------------------------------------------------------------------
 # Generate N robot models
@@ -55,6 +56,11 @@ def spawn_n_robots(context, *args, **kwargs):
 
     base_dir = Path('~/bluerov2_n_gz').expanduser()
     models_dir = base_dir / 'generated_models'
+
+    # clean previous run
+    if models_dir.exists():
+        shutil.rmtree(models_dir)
+
 
     models_dir.mkdir(parents=True, exist_ok=True)
 
@@ -149,6 +155,9 @@ def generate_world(context, *args, **kwargs):
 
     base_dir = Path('~/bluerov2_n_gz').expanduser()
     world_file = base_dir / 'world.sdf'
+
+    if world_file.exists():
+        world_file.unlink()
 
     base_dir.mkdir(parents=True, exist_ok=True)
 

@@ -74,6 +74,8 @@
       
       <enable>robot_1</enable>
       
+      <enable>robot_2</enable>
+      
 
     </plugin>
 
@@ -315,6 +317,11 @@
     <include>
       <uri>model://robot_1</uri>
       <pose>5 0 -2 0 0 0</pose>
+    </include>
+    
+    <include>
+      <uri>model://robot_2</uri>
+      <pose>10 0 -2 0 0 0</pose>
     </include>
     
 
