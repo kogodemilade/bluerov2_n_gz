@@ -29,6 +29,7 @@ from launch_ros.actions import Node
 from launch_ros.actions import SetParameter
 from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.parameter_descriptions import ParameterValue
+from launch.actions import ExecuteProcess
 
 # ---------------------------------------------------------------------------
 # Generate N robot models
@@ -194,6 +195,16 @@ def launch_perception_and_slam(context, *args, **kwargs):
     slam_bridge = LaunchConfiguration('bridge').perform(context)
     use_vpe = LaunchConfiguration('use_vpe').perform(context)
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context)
+
+    orca_bringup_dir = get_package_share_directory('orca_bringup')
+    sub_common_parm_file = os.path.join(orca_bringup_dir, 'config', 'sub_common.parm')
+    sub_vpd_parm_file = os.path.join(orca_bringup_dir, 'config', 'sub_vpd.parm')
+    sub_vpe_parm_file = os.path.join(orca_bringup_dir, 'config', 'sub_vpe.parm')
+    sub_vpd_parm_files = f'{sub_common_parm_file},{sub_vpd_parm_file}'
+    sub_vpe_parm_files = f'{sub_common_parm_file},{sub_vpe_parm_file}'
+    ardupilot_dir = Path.home() / 'ardupilot'
+    ardusub_path = ardupilot_dir / 'build/sitl/bin/ardusub'
+    
 
     orca_bringup_dir = get_package_share_directory(
         'orca_bringup'
@@ -385,6 +396,25 @@ def launch_perception_and_slam(context, *args, **kwargs):
         )
     )
 
+    actions.append(
+        ExecuteProcess(
+                cmd=[
+                    str(ardusub_path),
+                    '-S',
+                    '--wipe',
+                    '-M',
+                    'JSON',
+                    f'-I{i}',
+                    '--home',
+                    '47.6302,-122.3982391,-0.1,0',
+                    '--defaults',
+                    sub_vpe_parm_files,
+                ],
+                output='screen',
+                # condition=IfCondition(LaunchConfiguration('ardusub')),
+            )
+            )
+
     return actions
 
 
@@ -521,17 +551,17 @@ def generate_launch_description():
     # RVIZ 
     # -----------------------------------------------------------------------
 
-    rviz = Node(
-        package='rviz2',
-        executable='rviz2',
-        output='screen',
-        parameters=[
-            {
-                'use_sim_time': True,
-            }
-        ],
-        arguments=['-d', os.path.join(get_package_share_directory('orca_bringup'), 'rviz', 'sim.rviz')],
-    )
+    # rviz = Node(
+    #     package='rviz2',
+    #     executable='rviz2',
+    #     output='screen',
+    #     parameters=[
+    #         {
+    #             'use_sim_time': True,
+    #         }
+    #     ],
+    #     arguments=['-d', os.path.join(get_package_share_directory('orca_bringup'), 'rviz', 'sim.rviz')],
+    # )
     # -----------------------------------------------------------------------
     # Clock bridge
     # -----------------------------------------------------------------------
@@ -553,6 +583,8 @@ def generate_launch_description():
     perception_and_slam = OpaqueFunction(
         function=launch_perception_and_slam
     )
+
+
 
     # -----------------------------------------------------------------------
     # LaunchDescription
@@ -578,6 +610,6 @@ def generate_launch_description():
     ld.add_action(clock_bridge)
 
     ld.add_action(perception_and_slam)
-    ld.add_action(rviz)
+    # ld.add_action(rviz)
 
     return ld
