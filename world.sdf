@@ -60,7 +60,7 @@
     
     <include>
       <uri>model://robot_0</uri>
-      <pose>0 0 -2 0 0 0</pose>
+      <pose>0 0 -9.5 0 0 0</pose>
     </include>
     
 

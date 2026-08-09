@@ -107,7 +107,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /map_points/scaled
+        Value: /robot_0/map_points/scaled
       Use Fixed Frame: true
       Use rainbow: true
       Value: true

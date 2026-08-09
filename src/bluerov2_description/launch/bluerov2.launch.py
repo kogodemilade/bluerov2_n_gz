@@ -73,7 +73,7 @@ def spawn_n_robots(context, *args, **kwargs):
             'mavlink_port': 14550 + i,
             'x': i * 5,
             'y': 0,
-            'z': -2,
+            'z': -8,
         }
         robots_list.append(robot)
 
