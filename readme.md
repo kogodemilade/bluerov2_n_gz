@@ -45,12 +45,8 @@ where n is replaced with the number of robots you may want to spawn. It defaults
 *Notes:*
 Gazebo caches data, which make running subsequent launches with different numbers of n prone to unpredictable behaviour. So, after each run these commands:
 ```
-rm -rf build install log generated_models 
-rm world.sdf
 rm -rf ~/.gz/fuel
 rm -rf ~/.gz/sim
-pkill -f gz
-pkill -f ruby
 colcon build
 ```
 (you can copy all at once and paste into your terminal.)
