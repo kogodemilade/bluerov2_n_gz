@@ -228,9 +228,9 @@ def launch_perception_and_slam(context, *args, **kwargs):
     actions = []
 
     # Shared Gazebo -> ROS odometry bridge
-    odometry_bridge_args = [
-        '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'
-    ]
+    # odometry_bridge_args = [
+    #     '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'
+    # ]
 
     for i in range(n):
 
@@ -262,10 +262,10 @@ def launch_perception_and_slam(context, *args, **kwargs):
         # Odometry bridge
         # ------------------------------------------------------------------
 
-        odometry_bridge_args.append(
-            f'/model/{robot_name}/odometry'
-            '@nav_msgs/msg/Odometry[gz.msgs.Odometry'
-        )
+        # odometry_bridge_args.append(
+        #     f'/model/{robot_name}/odometry'
+        #     '@nav_msgs/msg/Odometry[gz.msgs.Odometry'
+        # )
 
         # ------------------------------------------------------------------
         # Camera info
@@ -414,15 +414,15 @@ def launch_perception_and_slam(context, *args, **kwargs):
     # One shared odometry + clock bridge
     # ----------------------------------------------------------------------
 
-    actions.append(
-        Node(
-            package='ros_gz_bridge',
-            executable='parameter_bridge',
-            name='odometry_bridge',
-            output='screen',
-            arguments=odometry_bridge_args,
-        )
-    )
+    # actions.append(
+    #     Node(
+    #         package='ros_gz_bridge',
+    #         executable='parameter_bridge',
+    #         name='odometry_bridge',
+    #         output='screen',
+    #         arguments=odometry_bridge_args,
+    #     )
+    # )
     
 
     return actions

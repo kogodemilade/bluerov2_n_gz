@@ -122,18 +122,21 @@ class MonoSlamBridge(rclpy.node.Node):
 
         tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster(self)
 
-        tf_msg = geometry_msgs.msg.TransformStamped()
-        tf_msg.header.stamp = self.get_clock().now().to_msg()
+        tf_msg_1 = geometry_msgs.msg.TransformStamped()
+        tf_msg_2 = geometry_msgs.msg.TransformStamped()
+        tf_msg_1.header.stamp = self.get_clock().now().to_msg()
 
-        tf_msg.header.frame_id = f'{self.robot_name}/slam'
-        tf_msg.child_frame_id = f'{self.robot_name}/world'
-        tf_msg.transform = self.t_slam_world.to_transform_msg()
-        tf_static_broadcaster.sendTransform(tf_msg)
+        tf_msg_1.header.frame_id = f'{self.robot_name}/slam'
+        tf_msg_1.child_frame_id = f'{self.robot_name}/world'
+        tf_msg_1.transform = self.t_slam_world.to_transform_msg()
+        self.get_logger().info(f"slam_world message: {tf_msg_1}")
+        # tf_static_broadcaster.sendTransform(tf_msg)
 
-        tf_msg.header.frame_id = f'{self.robot_name}/camera_link'
-        tf_msg.child_frame_id = f'{self.robot_name}/camera_sensor'
-        tf_msg.transform = geometry.Pose.T_FLU_OPENCV.to_transform_msg()
-        tf_static_broadcaster.sendTransform(tf_msg)
+        tf_msg_2.header.frame_id = f'{self.robot_name}/camera_link'
+        tf_msg_2.child_frame_id = f'{self.robot_name}/camera_sensor'
+        tf_msg_2.transform = geometry.Pose.T_FLU_OPENCV.to_transform_msg()
+        self.get_logger().info(f"camera message: {tf_msg_2}")
+        tf_static_broadcaster.sendTransform([tf_msg_1, tf_msg_2])
 
     def set_ekf_sources(self, slam_tracking: bool):
         """
