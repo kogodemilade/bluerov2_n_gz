@@ -2,7 +2,7 @@
 
 The name bluerov2_n_gz is just a horrible name, not much meaning to it asides the fact that it was supposed to signify that it can launch an arbitrary number (n) bots in the same world.
 
-This was designed on Ubuntu 24.04 LTS, with ROS@ jazzy. This is just a launch file so there shouldn't be many errors in other ROS2 versions asides variable name issues and other trivial issues.
+This was designed on Ubuntu 24.04 LTS, with ROS@ jazzy. Due to the incorporation of orca5 features, this may not run on versions older than jazzy. The best thing to do would be to create a dockerized jazzy container. Documentation would come in later.
 
 If you're getting errors, the first thing to check are the directories. A few things are currently hardcoded due to debugging/testing. But the quick fix may be to move this project to home (\~/bluerov2_n_gz). If you've not cloned it yet, cloning in home directory is best. To clarify, the home directory (\~) expands to \~/{user} where user is the name of your profile. For example, \~/demi. This will be fixed in a future release to allow more flexibility.
 
