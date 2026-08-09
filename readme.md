@@ -7,6 +7,7 @@ This was designed on Ubuntu 24.04 LTS, with ROS@ jazzy. Due to the incorporation
 If you're getting errors, the first thing to check are the directories. A few things are currently hardcoded due to debugging/testing. But the quick fix may be to move this project to home (\~/bluerov2_n_gz). If you've not cloned it yet, cloning in home directory is best. To clarify, the home directory (\~) expands to \~/{user} where user is the name of your profile. For example, \~/demi. This will be fixed in a future release to allow more flexibility.
 
 **Setup**
+
 This repository contains submodules.  Therefore, the cloning command is:
 ```
 git clone --recurse-submodules https://github.com/kogodemilade/bluerov2_n_gz.git
