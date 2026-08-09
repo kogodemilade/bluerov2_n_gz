@@ -84,30 +84,30 @@ def spawn_n_robots(context, *args, **kwargs):
         with open(robot_dir / 'model.config', 'w') as f:
             f.write(config)
 
-    rviz_dir = Path(get_package_share_directory("orca_bringup")) / 'rviz'
-    rviz_env = Environment(loader=FileSystemLoader(str(rviz_dir)))
-    rviz_template = rviz_env.get_template('sim.rviz.jinja')
-    rviz_rendered = rviz_template.render(robots_list=robots_list)
+    # rviz_dir = Path(get_package_share_directory("orca_bringup")) / 'rviz'
+    # rviz_env = Environment(loader=FileSystemLoader(str(rviz_dir)))
+    # rviz_template = rviz_env.get_template('sim.rviz.jinja')
+    # rviz_rendered = rviz_template.render(robots_list=robots_list)
 
-    with open(rviz_dir / 'gen_sim.rviz', 'w') as f:
-        f.write(rviz_rendered)
+    # with open(rviz_dir / 'gen_sim.rviz', 'w') as f:
+    #     f.write(rviz_rendered)
 
     return [
         AppendEnvironmentVariable(
             name='GZ_SIM_RESOURCE_PATH',
             value=str(models_dir),
         ),
-        Node(
-            package='rviz2',
-            executable='rviz2',
-            output='screen',
-            parameters=[
-                {
-                    'use_sim_time': True,
-                }
-            ],
-            arguments=['-d', os.path.join(get_package_share_directory('orca_bringup'), 'rviz', 'gen_sim.rviz')],
-        )
+        # Node(
+        #     package='rviz2',
+        #     executable='rviz2',
+        #     output='screen',
+        #     parameters=[
+        #         {
+        #             'use_sim_time': True,
+        #         }
+        #     ],
+        #     arguments=['-d', os.path.join(get_package_share_directory('orca_bringup'), 'rviz', 'gen_sim.rviz')],
+        # )
     ]
 
 
@@ -381,6 +381,25 @@ def launch_perception_and_slam(context, *args, **kwargs):
                 ),
             )
         )
+        # Ardusub
+        actions.append(
+            ExecuteProcess(
+                    cmd=[
+                        str(ardusub_path),
+                        '-S',
+                        '--wipe',
+                        '-M',
+                        'JSON',
+                        f'-I{i}',
+                        '--home',
+                        '47.6302,-122.3982391,-0.1,0',
+                        '--defaults',
+                        sub_vpe_parm_files,
+                    ],
+                    output='screen',
+                    # condition=IfCondition(LaunchConfiguration('ardusub')),
+                )
+                )
 
     # ----------------------------------------------------------------------
     # One shared odometry + clock bridge
@@ -395,25 +414,7 @@ def launch_perception_and_slam(context, *args, **kwargs):
             arguments=odometry_bridge_args,
         )
     )
-
-    actions.append(
-        ExecuteProcess(
-                cmd=[
-                    str(ardusub_path),
-                    '-S',
-                    '--wipe',
-                    '-M',
-                    'JSON',
-                    f'-I{i}',
-                    '--home',
-                    '47.6302,-122.3982391,-0.1,0',
-                    '--defaults',
-                    sub_vpe_parm_files,
-                ],
-                output='screen',
-                # condition=IfCondition(LaunchConfiguration('ardusub')),
-            )
-            )
+    
 
     return actions
 
@@ -551,17 +552,17 @@ def generate_launch_description():
     # RVIZ 
     # -----------------------------------------------------------------------
 
-    # rviz = Node(
-    #     package='rviz2',
-    #     executable='rviz2',
-    #     output='screen',
-    #     parameters=[
-    #         {
-    #             'use_sim_time': True,
-    #         }
-    #     ],
-    #     arguments=['-d', os.path.join(get_package_share_directory('orca_bringup'), 'rviz', 'sim.rviz')],
-    # )
+    rviz = Node(
+        package='rviz2',
+        executable='rviz2',
+        output='screen',
+        parameters=[
+            {
+                'use_sim_time': True,
+            }
+        ],
+        arguments=['-d', os.path.join(get_package_share_directory('orca_bringup'), 'rviz', 'sim.rviz')],
+    )
     # -----------------------------------------------------------------------
     # Clock bridge
     # -----------------------------------------------------------------------
@@ -610,6 +611,6 @@ def generate_launch_description():
     ld.add_action(clock_bridge)
 
     ld.add_action(perception_and_slam)
-    # ld.add_action(rviz)
+    ld.add_action(rviz)
 
     return ld
