@@ -6,6 +6,7 @@ with camera/odometry bridges, TF, and per-robot ORB-SLAM3.
 """
 
 import os
+import shutil
 from pathlib import Path
 
 from ament_index_python.packages import (
@@ -26,11 +27,9 @@ from launch.actions import (
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch_ros.actions import SetParameter
-from launch.conditions import IfCondition, UnlessCondition
-from launch_ros.parameter_descriptions import ParameterValue
+from launch.conditions import IfCondition
 from launch.actions import ExecuteProcess
-import shutil
+
 
 # ---------------------------------------------------------------------------
 # Generate N robot models
@@ -39,6 +38,12 @@ import shutil
 def spawn_n_robots(context, *args, **kwargs):
 
     n = int(LaunchConfiguration('number').perform(context))
+
+    # Directory for generated models/world files
+    generated_dir = Path(
+        LaunchConfiguration('generated_dir').perform(context)
+    )
+
     robots_list = []
 
     share_dir = Path(
@@ -54,13 +59,11 @@ def spawn_n_robots(context, *args, **kwargs):
     model_template = env.get_template('model.sdf.jinja')
     config_template = env.get_template('model.config.jinja')
 
-    base_dir = Path('~/bluerov2_n_gz').expanduser()
-    models_dir = base_dir / 'generated_models'
+    models_dir = generated_dir / 'generated_models'
 
-    # clean previous run
+    # Clean previous generated models
     if models_dir.exists():
         shutil.rmtree(models_dir)
-
 
     models_dir.mkdir(parents=True, exist_ok=True)
 
@@ -75,6 +78,7 @@ def spawn_n_robots(context, *args, **kwargs):
             'y': 0,
             'z': -8,
         }
+
         robots_list.append(robot)
 
         rendered = model_template.render(robot=robot)
@@ -90,30 +94,11 @@ def spawn_n_robots(context, *args, **kwargs):
         with open(robot_dir / 'model.config', 'w') as f:
             f.write(config)
 
-    # rviz_dir = Path(get_package_share_directory("orca_bringup")) / 'rviz'
-    # rviz_env = Environment(loader=FileSystemLoader(str(rviz_dir)))
-    # rviz_template = rviz_env.get_template('sim.rviz.jinja')
-    # rviz_rendered = rviz_template.render(robots_list=robots_list)
-
-    # with open(rviz_dir / 'gen_sim.rviz', 'w') as f:
-    #     f.write(rviz_rendered)
-
     return [
         AppendEnvironmentVariable(
             name='GZ_SIM_RESOURCE_PATH',
             value=str(models_dir),
         ),
-        # Node(
-        #     package='rviz2',
-        #     executable='rviz2',
-        #     output='screen',
-        #     parameters=[
-        #         {
-        #             'use_sim_time': True,
-        #         }
-        #     ],
-        #     arguments=['-d', os.path.join(get_package_share_directory('orca_bringup'), 'rviz', 'gen_sim.rviz')],
-        # )
     ]
 
 
@@ -124,6 +109,11 @@ def spawn_n_robots(context, *args, **kwargs):
 def generate_world(context, *args, **kwargs):
 
     n = int(LaunchConfiguration('number').perform(context))
+
+    # Directory for generated world/models
+    generated_dir = Path(
+        LaunchConfiguration('generated_dir').perform(context)
+    )
 
     share_dir = Path(
         get_package_share_directory('bluerov2_description')
@@ -153,13 +143,14 @@ def generate_world(context, *args, **kwargs):
         robot_names=robot_names
     )
 
-    base_dir = Path('~/bluerov2_n_gz').expanduser()
-    world_file = base_dir / 'world.sdf'
+    # Ensure generated directory exists
+    generated_dir.mkdir(parents=True, exist_ok=True)
 
+    world_file = generated_dir / 'world.sdf'
+
+    # Remove previous generated world
     if world_file.exists():
         world_file.unlink()
-
-    base_dir.mkdir(parents=True, exist_ok=True)
 
     with open(world_file, 'w') as f:
         f.write(rendered)
@@ -185,11 +176,7 @@ def generate_world(context, *args, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# NEW: ported from the single-robot orca5 launch file
-# (ArduSub itself is intentionally NOT launched here -- start it manually
-# per robot in separate terminals, matching each instance's -I<n> to the
-# fdm_port values in spawn_n_robots() (9002 + i*10) and picking a distinct
-# --out MAVLink port per instance, e.g. 14550 + i.)
+# Perception, SLAM and ArduSub
 # ---------------------------------------------------------------------------
 
 def launch_perception_and_slam(context, *args, **kwargs):
@@ -205,18 +192,39 @@ def launch_perception_and_slam(context, *args, **kwargs):
     use_vpe = LaunchConfiguration('use_vpe').perform(context)
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context)
 
-    orca_bringup_dir = get_package_share_directory('orca_bringup')
-    sub_common_parm_file = os.path.join(orca_bringup_dir, 'config', 'sub_common.parm')
-    sub_vpd_parm_file = os.path.join(orca_bringup_dir, 'config', 'sub_vpd.parm')
-    sub_vpe_parm_file = os.path.join(orca_bringup_dir, 'config', 'sub_vpe.parm')
-    sub_vpd_parm_files = f'{sub_common_parm_file},{sub_vpd_parm_file}'
-    sub_vpe_parm_files = f'{sub_common_parm_file},{sub_vpe_parm_file}'
-    ardupilot_dir = Path.home() / 'ardupilot'
-    ardusub_path = ardupilot_dir / 'build/sitl/bin/ardusub'
-    
+    # Configurable ArduSub executable path
+    ardusub_path = LaunchConfiguration(
+        'ardusub_path'
+    ).perform(context)
 
     orca_bringup_dir = get_package_share_directory(
         'orca_bringup'
+    )
+
+    sub_common_parm_file = os.path.join(
+        orca_bringup_dir,
+        'config',
+        'sub_common.parm'
+    )
+
+    sub_vpd_parm_file = os.path.join(
+        orca_bringup_dir,
+        'config',
+        'sub_vpd.parm'
+    )
+
+    sub_vpe_parm_file = os.path.join(
+        orca_bringup_dir,
+        'config',
+        'sub_vpe.parm'
+    )
+
+    sub_vpd_parm_files = (
+        f'{sub_common_parm_file},{sub_vpd_parm_file}'
+    )
+
+    sub_vpe_parm_files = (
+        f'{sub_common_parm_file},{sub_vpe_parm_file}'
     )
 
     orb_settings_file = os.path.join(
@@ -226,11 +234,6 @@ def launch_perception_and_slam(context, *args, **kwargs):
     )
 
     actions = []
-
-    # Shared Gazebo -> ROS odometry bridge
-    # odometry_bridge_args = [
-    #     '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'
-    # ]
 
     for i in range(n):
 
@@ -253,19 +256,10 @@ def launch_perception_and_slam(context, *args, **kwargs):
                 parameters=[
                     {
                         'use_sim_time': True
-                    }
+                     }
                 ],
             )
         )
-
-        # ------------------------------------------------------------------
-        # Odometry bridge
-        # ------------------------------------------------------------------
-
-        # odometry_bridge_args.append(
-        #     f'/model/{robot_name}/odometry'
-        #     '@nav_msgs/msg/Odometry[gz.msgs.Odometry'
-        # )
 
         # ------------------------------------------------------------------
         # Camera info
@@ -304,7 +298,7 @@ def launch_perception_and_slam(context, *args, **kwargs):
                 parameters=[
                     {
                         'use_sim_time': True
-                    }
+                     }
                 ],
                 arguments=[
                     '--x', '0',
@@ -390,40 +384,28 @@ def launch_perception_and_slam(context, *args, **kwargs):
                 ),
             )
         )
-        # Ardusub
+
+        # ------------------------------------------------------------------
+        # ArduSub
+        # ------------------------------------------------------------------
+
         actions.append(
             ExecuteProcess(
-                    cmd=[
-                        str(ardusub_path),
-                        '-S',
-                        '--wipe',
-                        '-M',
-                        'JSON',
-                        f'-I{i}',
-                        '--home',
-                        '47.6302,-122.3982391,-0.1,0',
-                        '--defaults',
-                        sub_vpe_parm_files,
-                    ],
-                    output='screen',
-                    # condition=IfCondition(LaunchConfiguration('ardusub')),
-                )
-                )
-
-    # ----------------------------------------------------------------------
-    # One shared odometry + clock bridge
-    # ----------------------------------------------------------------------
-
-    # actions.append(
-    #     Node(
-    #         package='ros_gz_bridge',
-    #         executable='parameter_bridge',
-    #         name='odometry_bridge',
-    #         output='screen',
-    #         arguments=odometry_bridge_args,
-    #     )
-    # )
-    
+                cmd=[
+                    ardusub_path,
+                    '-S',
+                    '--wipe',
+                    '-M',
+                    'JSON',
+                    f'-I{i}',
+                    '--home',
+                    '47.6302,-122.3982391,-0.1,0',
+                    '--defaults',
+                    sub_vpe_parm_files,
+                ],
+                output='screen',
+            )
+        )
 
     return actions
 
@@ -434,7 +416,9 @@ def launch_perception_and_slam(context, *args, **kwargs):
 
 def generate_launch_description():
 
-    ros_gz_sim = get_package_share_directory('ros_gz_sim')
+    ros_gz_sim = get_package_share_directory(
+        'ros_gz_sim'
+    )
 
     # -----------------------------------------------------------------------
     # Arguments
@@ -486,6 +470,34 @@ def generate_launch_description():
     )
 
     # -----------------------------------------------------------------------
+    # Generated-file directory
+    # -----------------------------------------------------------------------
+
+    generated_dir_arg = DeclareLaunchArgument(
+        'generated_dir',
+        default_value='/tmp/bluerov2_n_gz',
+        description=(
+            'Directory used for generated Gazebo world '
+            'and robot models'
+        ),
+    )
+
+    # -----------------------------------------------------------------------
+    # ArduSub executable
+    # -----------------------------------------------------------------------
+
+    ardusub_path_arg = DeclareLaunchArgument(
+        'ardusub_path',
+        default_value=str(
+            Path.home() /
+            'ardupilot/build/sitl/bin/ardusub'
+        ),
+        description=(
+            'Path to the ArduSub SITL executable'
+        ),
+    )
+
+    # -----------------------------------------------------------------------
     # Gazebo resource paths
     # -----------------------------------------------------------------------
 
@@ -533,7 +545,7 @@ def generate_launch_description():
     )
 
     # -----------------------------------------------------------------------
-    # Generate world + start Gazebo server
+    # Generate world + start Gazebo
     # -----------------------------------------------------------------------
 
     generate_world_action = OpaqueFunction(
@@ -558,7 +570,7 @@ def generate_launch_description():
     )
 
     # -----------------------------------------------------------------------
-    # RVIZ 
+    # RViz
     # -----------------------------------------------------------------------
 
     rviz = Node(
@@ -568,10 +580,20 @@ def generate_launch_description():
         parameters=[
             {
                 'use_sim_time': True,
-            }
+             }
         ],
-        arguments=['-d', os.path.join(get_package_share_directory('orca_bringup'), 'rviz', 'sim.rviz')],
+        arguments=[
+            '-d',
+            os.path.join(
+                get_package_share_directory(
+                    'orca_bringup'
+                ),
+                'rviz',
+                'sim.rviz'
+            )
+        ],
     )
+
     # -----------------------------------------------------------------------
     # Clock bridge
     # -----------------------------------------------------------------------
@@ -594,8 +616,6 @@ def generate_launch_description():
         function=launch_perception_and_slam
     )
 
-
-
     # -----------------------------------------------------------------------
     # LaunchDescription
     # -----------------------------------------------------------------------
@@ -611,6 +631,10 @@ def generate_launch_description():
     ld.add_action(bridge_arg)
     ld.add_action(orb_arg)
     ld.add_action(use_vpe_arg)
+
+    # New configurable paths
+    ld.add_action(generated_dir_arg)
+    ld.add_action(ardusub_path_arg)
 
     ld.add_action(generate_models)
     ld.add_action(generate_world_action)
