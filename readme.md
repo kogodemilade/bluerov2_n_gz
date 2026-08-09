@@ -11,14 +11,34 @@ If you're getting errors, the first thing to check are the directories. A few th
 This repository contains submodules.  Therefore, the cloning command is:
 ```
 git clone --recurse-submodules https://github.com/kogodemilade/bluerov2_n_gz.git
+cd bluerov2_n_gz
+
+docker build -t bluerov2_n_gz .#if not on jazzy
+```
+
+(docker build if not on jazzy)
+```
+xhost +local:docker
+
+docker run -it --rm \
+    --net=host \
+    --ipc=host \
+    -e DISPLAY=$DISPLAY \
+    -e QT_X11_NO_MITSHM=1 \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+    -v "$(pwd):/workspace/bluerov2_n_gz" \
+    bluerov2_n_gz
 ```
 
 after cloning repository, run:
 ```
 cd ~/bluerov2_n_gz
+source /opt/ros/jazzy/setup.bash
+source .venv/bin/activate
 colcon build
 source install/setup.bash
 ```
+If not on jazzy, replace \~/bluerov2_n_gz with /workspace/bluerov2_n_gz. You can then skip to the ArduSub paragraph as the dockerfile takes care of installation.
 
 This requires jinja2 and transformations3D installed, and can be installed via pip (this should be ran in the project's root directory, /bluerov2_n_gz: 
 
