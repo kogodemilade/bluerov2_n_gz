@@ -1,13 +1,21 @@
+# ============================================================
+# BlueROV2_n_gz development/simulation environment
+#
+# Intended ROS distribution: Jazzy
+# Host ROS distribution does not matter when running the
+# complete simulation inside this container.
+# ============================================================
+
 FROM osrf/ros:jazzy-desktop
+
+SHELL ["/bin/bash", "-c"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 
-SHELL ["/bin/bash", "-c"]
-
-# ------------------------------------------------------------
-# Basic tools
-# ------------------------------------------------------------
+# ============================================================
+# Basic build/runtime tools
+# ============================================================
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -36,12 +44,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     rapidjson-dev \
     xterm \
+    lsb-release \
     && rm -rf /var/lib/apt/lists/*
 
-
-# ------------------------------------------------------------
-# ROS / Gazebo dependencies
-# ------------------------------------------------------------
+# ============================================================
+# ROS 2 / Gazebo dependencies
+# ============================================================
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-jazzy-ros-gz \
@@ -58,10 +66,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-jazzy-ament-index-python \
     && rm -rf /var/lib/apt/lists/*
 
-
-# ------------------------------------------------------------
+# ============================================================
 # GStreamer / ArduPilot dependencies
-# ------------------------------------------------------------
+# ============================================================
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgstreamer1.0-dev \
@@ -76,103 +83,101 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-wxgtk4.0 \
     && rm -rf /var/lib/apt/lists/*
 
-
-# ------------------------------------------------------------
-# Gazebo OSRF repository
-# Needed by ardupilot_gazebo
-# ------------------------------------------------------------
+# ============================================================
+# Gazebo package repository
+# ============================================================
 
 RUN curl -fsSL \
     https://packages.osrfoundation.org/gazebo.gpg \
     -o /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" \
+    && echo \
+    "deb [arch=$(dpkg --print-architecture) \
+    signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] \
+    https://packages.osrfoundation.org/gazebo/ubuntu-stable \
+    $(lsb_release -cs) main" \
     > /etc/apt/sources.list.d/gazebo-stable.list
 
 RUN wget \
     https://raw.githubusercontent.com/osrf/osrf-rosdep/master/gz/00-gazebo.list \
     -O /etc/ros/rosdep/sources.list.d/00-gazebo.list
 
-
-# ------------------------------------------------------------
+# ============================================================
 # rosdep
-# ------------------------------------------------------------
+# ============================================================
 
 RUN rosdep init 2>/dev/null || true
 RUN rosdep update
 
-
-# ------------------------------------------------------------
-# Workspace
-# ------------------------------------------------------------
+# ============================================================
+# Clone repository WITH submodules
+#
+# This avoids relying on .git being present in the Docker
+# build context.
+#
+# .gitmodules contains:
+#   orca5
+#   src/orb_slam3_ros
+# ============================================================
 
 WORKDIR /workspace
 
-COPY . /workspace/bluerov2_n_gz
+RUN git clone --recurse-submodules \
+    https://github.com/kogodemilade/bluerov2_n_gz.git \
+    /workspace/bluerov2_n_gz
 
 WORKDIR /workspace/bluerov2_n_gz
 
-
-# ------------------------------------------------------------
-# Make sure submodules are initialized
-# ------------------------------------------------------------
-
+# Make absolutely sure nested submodules are initialized.
 RUN git submodule update --init --recursive
 
-
-# ------------------------------------------------------------
+# ============================================================
 # ORB-SLAM3 vocabulary
-# ------------------------------------------------------------
+# ============================================================
 
 WORKDIR /workspace/bluerov2_n_gz/src/orb_slam3_ros/modules/ORB_SLAM3/Vocabulary
 
 RUN if [ -f ORBvoc.txt.tar.gz ]; then \
-        tar -xvf ORBvoc.txt.tar.gz; \
+        tar -xzf ORBvoc.txt.tar.gz; \
     fi
 
-
-# ------------------------------------------------------------
-# orca_msgs
+# ============================================================
+# Make orca_msgs available as a normal ROS package
 #
-# The repository uses the modified orca_bridge under src/,
-# but orca_msgs lives in the orca5 submodule.
-# Colcon will not automatically discover it there.
-# ------------------------------------------------------------
+# ORCA5 contains orca_msgs, while this workspace needs to
+# discover it from src/.
+# ============================================================
 
-RUN cp -r \
+RUN rm -rf /workspace/bluerov2_n_gz/src/orca_msgs \
+    && cp -a \
     /workspace/bluerov2_n_gz/orca5/orca_msgs \
     /workspace/bluerov2_n_gz/src/orca_msgs
 
-
-# ------------------------------------------------------------
-# Python dependencies used by Orca5 / bridge
+# ============================================================
+# Python virtual environment
 #
-# Orca5 requirements:
-# geopy
-# pymavlink
-# mavproxy
-# future
-# transforms3d
-#
-# Your repository additionally requires Jinja2.
-# ------------------------------------------------------------
+# No --break-system-packages is required because all pip
+# packages go into this virtual environment.
+# ============================================================
 
 WORKDIR /workspace/bluerov2_n_gz
 
 RUN python3 -m venv /workspace/bluerov2_n_gz/.venv \
     --system-site-packages
 
-RUN /workspace/bluerov2_n_gz/.venv/bin/pip install --no-cache-dir \
-    geopy \
-    pymavlink \
-    mavproxy \
-    future \
-    transforms3d \
-    jinja2
+ENV PATH="/workspace/bluerov2_n_gz/.venv/bin:$PATH"
 
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir \
+        geopy \
+        pymavlink \
+        mavproxy \
+        future \
+        transforms3d \
+        jinja2
 
-# ------------------------------------------------------------
-# ArduPilot / ArduSub
-# ------------------------------------------------------------
+# ============================================================
+# ArduPilot / ArduSub SITL
+# ============================================================
 
 WORKDIR /workspace
 
@@ -180,7 +185,10 @@ RUN git clone https://github.com/ArduPilot/ardupilot.git
 
 WORKDIR /workspace/ardupilot
 
-RUN git checkout e5e97094 \
+# Keep the known-compatible commit from the previous Dockerfile.
+ARG ARDUPILOT_COMMIT=e5e97094
+
+RUN git checkout ${ARDUPILOT_COMMIT} \
     && git submodule update --init --recursive
 
 ENV SKIP_AP_EXT_ENV=1
@@ -188,63 +196,94 @@ ENV SKIP_AP_GRAPHIC_ENV=1
 ENV SKIP_AP_COV_ENV=1
 ENV SKIP_AP_GIT_CHECK=1
 
+# Install ArduPilot build dependencies.
 RUN Tools/environment_install/install-prereqs-ubuntu.sh -y
 
-RUN python3 -m pip install --break-system-packages future
-
+# Build only ArduSub SITL.
 RUN ./modules/waf/waf-light configure --board sitl \
     && ./modules/waf/waf-light build --target bin/ardusub
 
+# ============================================================
+# GeographicLib datasets
+#
+# Use the copy shipped by the repository if available.
+# ============================================================
 
-# ------------------------------------------------------------
+RUN if [ -f /workspace/bluerov2_n_gz/install_geographiclib_datasets.sh ]; then \
+        chmod +x /workspace/bluerov2_n_gz/install_geographiclib_datasets.sh \
+        && /workspace/bluerov2_n_gz/install_geographiclib_datasets.sh; \
+    fi
+
+# ============================================================
 # ardupilot_gazebo
-# ------------------------------------------------------------
+# ============================================================
 
 WORKDIR /workspace
 
-RUN git clone https://github.com/ArduPilot/ardupilot_gazebo.git \
-    && cd ardupilot_gazebo \
-    && git checkout cc0290d
-
-ENV GZ_VERSION=harmonic
+RUN git clone https://github.com/ArduPilot/ardupilot_gazebo.git
 
 WORKDIR /workspace/ardupilot_gazebo
+
+# Keep the known-compatible commit from the previous Dockerfile.
+ARG ARDUPILOT_GAZEBO_COMMIT=cc0290d
+
+RUN git checkout ${ARDUPILOT_GAZEBO_COMMIT}
+
+ENV GZ_VERSION=harmonic
 
 RUN mkdir -p build \
     && cd build \
     && cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-    && make -j$(nproc)
+    && make -j"$(nproc)"
 
-
-# ------------------------------------------------------------
-# Environment
-# ------------------------------------------------------------
+# ============================================================
+# Gazebo / ArduPilot runtime environment
+# ============================================================
 
 ENV GZ_SIM_SYSTEM_PLUGIN_PATH=/workspace/ardupilot_gazebo/build
+
 ENV GZ_SIM_RESOURCE_PATH=/workspace/bluerov2_n_gz/src/bluerov2_description/models:/workspace/bluerov2_n_gz/src/bluerov2_description/worlds
-ENV PATH=/workspace/ardupilot/build/sitl/bin:$PATH
 
-RUN echo 'source /opt/ros/jazzy/setup.bash' >> /root/.bashrc \
-    && echo 'source /workspace/bluerov2_n_gz/.venv/bin/activate' >> /root/.bashrc \
-    && echo 'source /workspace/bluerov2_n_gz/install/setup.bash 2>/dev/null || true' >> /root/.bashrc \
-    && echo 'export GZ_SIM_SYSTEM_PLUGIN_PATH=/workspace/ardupilot_gazebo/build' >> /root/.bashrc \
-    && echo 'export PATH=/workspace/ardupilot/build/sitl/bin:$PATH' >> /root/.bashrc
+ENV PATH="/workspace/ardupilot/build/sitl/bin:${PATH}"
 
+# ============================================================
+# Verify important executables during image build
+# ============================================================
 
-# ------------------------------------------------------------
+RUN gz sim --version \
+    && test -x /workspace/ardupilot/build/sitl/bin/ardusub \
+    && test -f /workspace/ardupilot_gazebo/build/libArduPilotPlugin.so
+
+# ============================================================
 # Build ROS workspace
-# ------------------------------------------------------------
+# ============================================================
 
 WORKDIR /workspace/bluerov2_n_gz
 
 RUN source /opt/ros/jazzy/setup.bash \
-    && rosdep update \
-    && rosdep install --from-paths src --ignore-src -r -y \
+    && rosdep install \
+        --from-paths src \
+        --ignore-src \
+        --rosdistro jazzy \
+        -r -y \
     && colcon build --symlink-install
 
+# ============================================================
+# Interactive shell configuration
+# ============================================================
 
-# ------------------------------------------------------------
-# Default shell
-# ------------------------------------------------------------
+RUN echo 'source /opt/ros/jazzy/setup.bash' >> /root/.bashrc \
+    && echo 'source /workspace/bluerov2_n_gz/.venv/bin/activate' >> /root/.bashrc \
+    && echo 'source /workspace/bluerov2_n_gz/install/setup.bash 2>/dev/null || true' >> /root/.bashrc \
+    && echo 'export GZ_VERSION=harmonic' >> /root/.bashrc \
+    && echo 'export GZ_SIM_SYSTEM_PLUGIN_PATH=/workspace/ardupilot_gazebo/build:${GZ_SIM_SYSTEM_PLUGIN_PATH}' >> /root/.bashrc \
+    && echo 'export GZ_SIM_RESOURCE_PATH=/workspace/bluerov2_n_gz/src/bluerov2_description/models:/workspace/bluerov2_n_gz/src/bluerov2_description/worlds:${GZ_SIM_RESOURCE_PATH}' >> /root/.bashrc \
+    && echo 'export PATH=/workspace/ardupilot/build/sitl/bin:$PATH' >> /root/.bashrc
+
+# ============================================================
+# Default working directory
+# ============================================================
+
+WORKDIR /workspace/bluerov2_n_gz
 
 ENTRYPOINT ["/bin/bash"]
